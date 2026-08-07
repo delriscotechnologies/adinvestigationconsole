@@ -36,7 +36,7 @@ $xaml = @'
                     <TextBlock Text="LOOKUPS" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,18"/>
 
                     <TextBlock Text="User Lookup" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Exact eRaider ID or AD email address" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
+                    <TextBlock Text="Exact eRaider ID or email address" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
                     <DockPanel>
                         <Button x:Name="UserButton" DockPanel.Dock="Right" Width="80" Content="Search" Margin="8,0,0,0" Style="{StaticResource Primary}"/>
                         <TextBox x:Name="UserInput" Style="{StaticResource Input}" MaxLength="256"/>
@@ -44,15 +44,15 @@ $xaml = @'
 
                     <Border Height="1" Background="#E2E8F0" Margin="0,19"/>
                     <TextBlock Text="Device Lookup" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Exact short computer name" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
+                    <TextBlock Text="Exact computer name" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
                     <DockPanel>
                         <Button x:Name="DeviceButton" DockPanel.Dock="Right" Width="80" Content="Search" Margin="8,0,0,0" Style="{StaticResource Primary}"/>
                         <TextBox x:Name="DeviceInput" Style="{StaticResource Input}" MaxLength="64"/>
                     </DockPanel>
 
                     <Border Height="1" Background="#E2E8F0" Margin="0,19"/>
-                    <TextBlock Text="Firewall Group Lookup" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Exact AD group identity; returns its name and OU" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
+                    <TextBlock Text="Firewall / AD Lookup" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="Username, computer name, AD group, or OU name" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
                     <DockPanel>
                         <Button x:Name="GroupButton" DockPanel.Dock="Right" Width="80" Content="Search" Margin="8,0,0,0" Style="{StaticResource Primary}"/>
                         <TextBox x:Name="GroupInput" Style="{StaticResource Input}" MaxLength="256"/>
@@ -71,7 +71,7 @@ $xaml = @'
                     </Grid>
                     <TextBlock x:Name="ResultTitle" Grid.Row="1" Text="Ready for a lookup" Margin="0,22,0,10" FontSize="18" FontWeight="SemiBold"/>
                     <TextBox x:Name="ResultText" Grid.Row="2" IsReadOnly="True"
-                             Text="Go to Hunt."
+                             Text="Go Hunt."
                              TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="14"
                              Background="#F8FAFC" BorderBrush="#D7DEE8" FontFamily="Consolas" FontSize="12.5"/>
                     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
@@ -109,32 +109,27 @@ function Set-Result($State, $Title, $Text) {
 function Get-OuInfo($dn) {
     $ous = @($dn -split '(?<!\\),' | Where-Object { $_ -like 'OU=*' } | ForEach-Object { $_.Substring(3).Replace('\,', ',') })
     if (-not $ous) { return @('Not available', 'Not available') }
-    $path = @($ous); [array]::Reverse($path); @($ous[0], ($path -join ' > '))
+    $path = @($ous); [array]::Reverse($path); @($ous[-1], ($path -join ' > '))
 }
-
-function ConvertTo-LdapValue($value) { $value.Replace('\','\5c').Replace('*','\2a').Replace('(','\28').Replace(')','\29').Replace([char]0,'\00') }
 
 $UserButton.Add_Click({
     $value = $UserInput.Text.Trim()
-    if (-not $value) { Set-Result Warning 'Input required' 'Enter an eRaider ID or AD email address.'; return }
+    if (-not $value) { Set-Result Warning 'Input required' 'Enter an eRaider or email address.'; return }
 
     try {
-        if ($value -like '*@*') {
-            $email = ConvertTo-LdapValue $value
-            $users = @(Get-ADUser -LDAPFilter "(mail=$email)" -Properties Department,mail -ResultSetSize 2 -ErrorAction Stop)
-            if ($users.Count -ne 1) { Set-Result Warning 'User not found' 'No unique user matched that email address.'; return }
-            $user = $users[0]
-        }
-        else {
-            $user = Get-ADUser -Identity $value -Properties Department,mail -ErrorAction Stop
-        }
+        $users = @(Get-ADUser -Filter { SamAccountName -eq $value -or mail -eq $value -or UserPrincipalName -eq $value } -Properties Department,mail -ResultSetSize 2 -ErrorAction Stop)
+        if ($users.Count -ne 1) { Set-Result Warning 'User not found' 'No unique user matched that eRaider or email address.'; return }
 
+        $user = $users[0]
         $department = if ($user.Department) { $user.Department } else { 'Not available' }
         $email = if ($user.mail) { $user.mail } else { 'Not available' }
-        $text = "Name        : $($user.Name)`r`neRaider     : $($user.SamAccountName)`r`nDepartment  : $department`r`nEmail       : $email"
+        $ou = Get-OuInfo $user.DistinguishedName
+        $text = "eRaider            : $($user.SamAccountName)`r`nDepartment         : $department`r`nEmail              : $email"
+        if ($ou[1] -ne 'Not available') { $text += "`r`nOU Path            : $($ou[1])" }
+        $text += "`r`nDistinguished Name : $($user.DistinguishedName)"
         Set-Result Success 'User found' $text
     }
-    catch { Set-Result Error 'User lookup failed' 'The user was not found.' }
+    catch { Set-Result Error 'User lookup failed' 'Active Directory could not complete the lookup.' }
 })
 
 $DeviceButton.Add_Click({
@@ -144,30 +139,47 @@ $DeviceButton.Add_Click({
     try {
         $computer = Get-ADComputer -Identity $name -ErrorAction Stop
         $ou = Get-OuInfo $computer.DistinguishedName
-        $text = "Computer Name       : $($computer.Name)`r`nOrganizational Unit : $($ou[0])`r`nOU Path             : $($ou[1])`r`nDistinguished Name  : $($computer.DistinguishedName)"
+        $text = "Computer Name      : $($computer.Name)`r`nDepartment         : $($ou[0])`r`nOU Path            : $($ou[1])`r`nDistinguished Name : $($computer.DistinguishedName)"
         Set-Result Success 'Computer found' $text
     }
     catch { Set-Result Error 'Computer lookup failed' 'The computer was not found.' }
 })
 
 $GroupButton.Add_Click({
-    $name = $GroupInput.Text.Trim()
-    if (-not $name) { Set-Result Warning 'Input required' 'Enter an AD group identity.'; return }
+    $value = $GroupInput.Text.Trim()
+    if (-not $value) { Set-Result Warning 'Input required' 'Enter a username, computer name, AD group, or OU name.'; return }
 
     try {
-        $group = Get-ADGroup -Identity $name -ErrorAction Stop
-        $ou = Get-OuInfo $group.DistinguishedName
-        $text = "Group Name          : $($group.Name)`r`nOrganizational Unit : $($ou[0])`r`nOU Path             : $($ou[1])`r`nDistinguished Name  : $($group.DistinguishedName)"
-        Set-Result Success 'AD group found' $text
+        $objects = @(Get-ADObject -Filter { (ObjectClass -eq 'user' -or ObjectClass -eq 'computer' -or ObjectClass -eq 'group' -or ObjectClass -eq 'organizationalUnit') -and (Name -eq $value -or SamAccountName -eq $value) } -Properties SamAccountName -ResultSetSize 2 -ErrorAction Stop)
+        if ($objects.Count -eq 0) { Set-Result Warning 'Not found' 'No user, computer, AD group, or OU matched that exact input.'; return }
+        if ($objects.Count -gt 1) {
+            $result = ($objects | ForEach-Object { "$($_.ObjectClass) : $($_.Name)`r`n$($_.DistinguishedName)" }) -join "`r`n`r`n"
+            Set-Result Warning 'Multiple AD objects found' $result
+            return
+        }
+
+        $object = $objects[0]
+        $ou = Get-OuInfo $object.DistinguishedName
+        switch ($object.ObjectClass) {
+            'user'               { $type = 'User';     $label = 'Username';      $name = $object.SamAccountName }
+            'computer'           { $type = 'Computer'; $label = 'Computer Name'; $name = $object.Name }
+            'group'              { $type = 'Group';    $label = 'Group Name';    $name = $object.Name }
+            'organizationalUnit' { $type = 'OU';       $label = 'OU Name';       $name = $object.Name }
+        }
+
+        $result = "Type               : $type`r`n$($label.PadRight(18)) : $name"
+        if ($ou[1] -ne 'Not available') { $result += "`r`nOU Path            : $($ou[1])" }
+        $result += "`r`nDistinguished Name : $($object.DistinguishedName)"
+        Set-Result Success 'Firewall lookup result' $result
     }
-    catch { Set-Result Error 'Group lookup failed' 'The group was not found.' }
+    catch { Set-Result Error 'Firewall lookup failed' 'Active Directory could not complete the lookup.' }
 })
 
 $CopyButton.Add_Click({ [Windows.Clipboard]::SetText($ResultText.Text) })
 
 $ClearButton.Add_Click({
     $UserInput.Clear(); $DeviceInput.Clear(); $GroupInput.Clear()
-    Set-Result Ready 'Ready for a lookup' 'Choose a lookup, enter an exact identifier, and select Search.'
+    Set-Result Ready 'Ready for a lookup' 'Go Hunt.'
 })
 
 $window.Add_ContentRendered({ $UserInput.Focus() | Out-Null })
