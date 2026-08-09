@@ -29,7 +29,7 @@ If your organization restricts PowerShell execution, follow its approved executi
 | --- | --- | --- |
 | User | Exact user ID or email | User ID, department, email, and OU path |
 | Device | Exact computer name | Computer name, possible department inferred from OU, full OU path, and Distinguished Name |
-| AD Group | Exact AD group identity | Full group Distinguished Name (`CN=...,OU=...,DC=...`) |
+| AD Group | Exact AD group identity | Full group Distinguished Name |
 
 The **Copy Result** button copies successful output to the clipboard.
 
