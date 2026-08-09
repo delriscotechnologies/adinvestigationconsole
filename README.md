@@ -42,3 +42,7 @@ This utility performs Active Directory read operations only. It does not create,
 Use the tool only in Active Directory environments you are authorized to access.
 
 See [SECURITY.md](SECURITY.md) for security and vulnerability-reporting guidance.
+
+## License
+
+Licensed under the [MIT License](LICENSE).
