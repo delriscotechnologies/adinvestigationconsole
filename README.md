@@ -4,13 +4,6 @@
   A local PowerShell utility for fast, read-only Active Directory lookups.
 </p>
 
-<p align="center">
-  <a href="#quick-start">Quick Start</a> ·
-  <a href="#what-you-get">Lookups</a> ·
-  <a href="#how-lookups-work">Behavior</a> ·
-  <a href="SECURITY.md">Security</a>
-</p>
-
 ---
 
 Active Directory Investigation Console is one Windows PowerShell 5.1 script with a WPF interface for three common investigation tasks: user lookup, device lookup, and AD group lookup.
