@@ -1,20 +1,27 @@
 <h1 align="center">Active Directory Investigation Console</h1>
 
 <p align="center">
-  A small Windows PowerShell 5.1 + WPF utility for fast, read-only Active Directory lookups.
+  A local PowerShell utility for fast, read-only Active Directory lookups.
+</p>
 
-The console keeps three common investigation tasks in one GUI: user lookup, device lookup, and AD group lookup.
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#what-you-get">Lookups</a> ·
+  <a href="#how-lookups-work">Behavior</a> ·
+  <a href="SECURITY.md">Security</a>
+</p>
 
-## Requirements
+---
 
-- Windows PowerShell 5.1
-- RSAT / Microsoft ActiveDirectory PowerShell module
-- Network access to Active Directory
-- An account with permission to read the requested AD objects
+Active Directory Investigation Console is one Windows PowerShell 5.1 script with a WPF interface for three common investigation tasks: user lookup, device lookup, and AD group lookup.
 
-The script uses the current Windows/AD security context. It does not store or request credentials.
+The console performs exact, read-only queries using the current Windows and Active Directory security context, then presents the selected result in one place for review or copying.
+
+> Use the console only in Active Directory environments you own or are explicitly authorized to investigate.
 
 ## Quick Start
+
+You need a domain-connected Windows host with Windows PowerShell 5.1, the RSAT Active Directory module, network access to Active Directory, and permission to read the requested objects.
 
 ```powershell
 git clone https://github.com/delriscotechnologies/adinvestigationconsole.git
@@ -24,7 +31,7 @@ powershell.exe -File .\ADInvestigationConsole.ps1
 
 If your organization restricts PowerShell execution, follow its approved execution-policy and code-signing requirements.
 
-## Lookups
+## What You Get
 
 | Lookup | Input | Result |
 | --- | --- | --- |
@@ -34,16 +41,21 @@ If your organization restricts PowerShell execution, follow its approved executi
 
 The **Copy Result** button copies successful output to the clipboard.
 
-## Scope
+## How Lookups Work
 
-This utility performs Active Directory read operations only. It does not create, modify, delete, or move users, computers, groups, or OUs.
+The script uses the current Windows and Active Directory security context. It does not store or request credentials.
 
-`Possible Department` in the device result is inferred from the computer's OU structure and should be treated as a convenience value, not an authoritative AD department attribute.
+Each search expects an exact identity rather than a broad discovery query. `Possible Department` in the device result is inferred from the computer's OU structure and should be treated as a convenience value, not an authoritative Active Directory department attribute.
 
-Use the tool only in Active Directory environments you are authorized to access.
+## Safety and Privacy
+
+- Performs Active Directory read operations only.
+- Does not create, modify, delete, or move users, computers, groups, or OUs.
+- Does not collect or handle separate credentials.
+- Returns directory information that may be sensitive and should be handled according to your organization's access and retention requirements.
 
 See [SECURITY.md](SECURITY.md) for security and vulnerability-reporting guidance.
 
 ## License
 
-Licensed under the [MIT License](LICENSE).
+Active Directory Investigation Console is available under the [MIT License](LICENSE).
