@@ -1,6 +1,7 @@
-# Active Directory Investigation Console
+<h1 align="center">Active Directory Investigation Console</h1>
 
-A small Windows PowerShell 5.1 + WPF utility for fast, read-only Active Directory lookups.
+<p align="center">
+  A small Windows PowerShell 5.1 + WPF utility for fast, read-only Active Directory lookups.
 
 The console keeps three common investigation tasks in one GUI: user lookup, device lookup, and AD group lookup.
 
