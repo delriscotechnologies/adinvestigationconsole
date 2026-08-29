@@ -6,7 +6,7 @@
 
 ---
 
-Active Directory Investigation Console is a Windows PowerShell 5.1 utility for exact user, computer, and AD group lookups through a simple WPF interface.
+Active Directory Investigation Console is a PowerShell utility for exact user, computer, and AD group lookups through a simple WPF interface.
 
 The console uses the current Windows and Active Directory security context and presents each result in one place for review or copying. It does not request or store separate credentials.
 
@@ -14,7 +14,7 @@ The console uses the current Windows and Active Directory security context and p
 
 ## Install
 
-You need a domain-connected Windows host with Windows PowerShell 5.1, the RSAT Active Directory module, network access to Active Directory, and permission to read the requested objects.
+You need a domain-connected Windows host with PowerShell, the RSAT Active Directory module, network access to Active Directory, and permission to read the requested objects.
 
 ```powershell
 git clone https://github.com/delriscotechnologies/adinvestigationconsole.git
@@ -22,7 +22,7 @@ cd adinvestigationconsole
 powershell.exe -File .\ADInvestigationConsole.ps1
 ```
 
-If your organization restricts PowerShell execution, follow its approved execution-policy and code-signing requirements.
+If your organization restricts PowerShell execution, follow its approved execution policy and code-signing requirements.
 
 ## What it does
 
@@ -36,7 +36,7 @@ Each lookup runs with the permissions of the current Windows session. The consol
 ## Output
 
 | Lookup | Evidence shown |
-|---|---|
+| --- | --- |
 | User | User ID, department, email address, and OU path |
 | Device | Computer name, possible department, OU path, and Distinguished Name |
 | AD Group | Full group Distinguished Name |
