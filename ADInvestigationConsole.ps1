@@ -114,7 +114,7 @@ function Get-OuInfo($dn) {
 
 $UserButton.Add_Click({
     $value = $UserInput.Text.Trim()
-    if (-not $value) { Set-Result Warning 'Input required' 'Enter an user or email address.'; return }
+    if (-not $value) { Set-Result Warning 'Input required' 'Enter a user or email address.'; return }
 
     try {
         $users = @(Get-ADUser -Filter { SamAccountName -eq $value -or mail -eq $value -or UserPrincipalName -eq $value } -Properties Department,mail -ResultSetSize 2 -ErrorAction Stop)
