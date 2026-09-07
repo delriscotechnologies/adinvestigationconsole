@@ -6,6 +6,21 @@ catch {
     return
 }
 
+$lookupCards = @(
+    @('User', 'User Lookup', 'Exact user ID or email address', 256),
+    @('Device', 'Device Lookup', 'Exact computer name', 64),
+    @('Group', 'AD Group Lookup', 'Exact AD group identity', 256)
+) | ForEach-Object {
+@'
+                    <TextBlock Text="{1}" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="{2}" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
+                    <DockPanel>
+                        <Button x:Name="{0}Button" DockPanel.Dock="Right" Width="80" Content="Search" Margin="8,0,0,0" Style="{{StaticResource Primary}}"/>
+                        <TextBox x:Name="{0}Input" Style="{{StaticResource Input}}" MaxLength="{3}"/>
+                    </DockPanel>
+'@ -f $_[0], $_[1], $_[2], $_[3]
+}
+
 $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -35,28 +50,7 @@ $xaml = @'
                 <StackPanel>
                     <TextBlock Text="LOOKUPS" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,18"/>
 
-                    <TextBlock Text="User Lookup" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Exact user ID or email address" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
-                    <DockPanel>
-                        <Button x:Name="UserButton" DockPanel.Dock="Right" Width="80" Content="Search" Margin="8,0,0,0" Style="{StaticResource Primary}"/>
-                        <TextBox x:Name="UserInput" Style="{StaticResource Input}" MaxLength="256"/>
-                    </DockPanel>
-
-                    <Border Height="1" Background="#E2E8F0" Margin="0,19"/>
-                    <TextBlock Text="Device Lookup" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Exact computer name" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
-                    <DockPanel>
-                        <Button x:Name="DeviceButton" DockPanel.Dock="Right" Width="80" Content="Search" Margin="8,0,0,0" Style="{StaticResource Primary}"/>
-                        <TextBox x:Name="DeviceInput" Style="{StaticResource Input}" MaxLength="64"/>
-                    </DockPanel>
-
-                    <Border Height="1" Background="#E2E8F0" Margin="0,19"/>
-                    <TextBlock Text="AD Group Lookup" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Exact AD group identity" FontSize="11" Foreground="#64748B" Margin="0,4,0,8"/>
-                    <DockPanel>
-                        <Button x:Name="GroupButton" DockPanel.Dock="Right" Width="80" Content="Search" Margin="8,0,0,0" Style="{StaticResource Primary}"/>
-                        <TextBox x:Name="GroupInput" Style="{StaticResource Input}" MaxLength="256"/>
-                    </DockPanel>
+                    <!-- LookupCards -->
                 </StackPanel>
             </Border>
 
@@ -83,16 +77,15 @@ $xaml = @'
         </Grid>
     </Grid>
 </Window>
-'@
+'@.Replace('<!-- LookupCards -->', ($lookupCards -join '<Border Height="1" Background="#E2E8F0" Margin="0,19"/>'))
 
 $window = [Windows.Markup.XamlReader]::Parse($xaml)
 
-$UserInput = $window.FindName('UserInput');       $UserButton = $window.FindName('UserButton')
-$DeviceInput = $window.FindName('DeviceInput');   $DeviceButton = $window.FindName('DeviceButton')
-$GroupInput = $window.FindName('GroupInput');     $GroupButton = $window.FindName('GroupButton')
-$StatusBadge = $window.FindName('StatusBadge');   $StatusBadgeText = $window.FindName('StatusBadgeText')
-$ResultTitle = $window.FindName('ResultTitle');   $ResultText = $window.FindName('ResultText')
-$CopyButton = $window.FindName('CopyButton');     $ClearButton = $window.FindName('ClearButton')
+foreach ($name in 'UserInput', 'UserButton', 'DeviceInput', 'DeviceButton',
+    'GroupInput', 'GroupButton', 'StatusBadge', 'StatusBadgeText',
+    'ResultTitle', 'ResultText', 'CopyButton', 'ClearButton') {
+    Set-Variable -Name $name -Value $window.FindName($name)
+}
 
 $brush = New-Object Windows.Media.BrushConverter
 $styles = @{ Ready = @('#F1F5F9','#475569','READY'); Success = @('#DCFCE7','#166534','FOUND'); Warning = @('#FEF3C7','#92400E','REVIEW'); Error = @('#FEE2E2','#991B1B','ERROR') }
@@ -107,7 +100,13 @@ function Set-Result($State, $Title, $Text) {
 }
 
 function Get-OuInfo($dn) {
-    $ous = @($dn -split '(?<!\\),' | Where-Object { $_ -like 'OU=*' } | ForEach-Object { $_.Substring(3).Replace('\,', ',') })
+    $ous = @([regex]::Matches($dn, '(?:^|[,+])([^=,+]+)=((?:\\.|[^,+\\])*)') | Where-Object { $_.Groups[1].Value -ieq 'OU' } | ForEach-Object {
+        [regex]::Replace($_.Groups[2].Value, '(?:\\[0-9a-fA-F]{2})+|\\(.)', {
+            param($m)
+            if ($m.Groups[1].Success) { return $m.Groups[1].Value }
+            [Text.Encoding]::UTF8.GetString([byte[]]@([regex]::Matches($m.Value, '[0-9a-fA-F]{2}') | ForEach-Object { [Convert]::ToByte($_.Value, 16) }))
+        })
+    })
     if (-not $ous) { return @('Not available', 'Not available') }
     $path = @($ous); [array]::Reverse($path); @($ous[-1], ($path -join ' > '))
 }

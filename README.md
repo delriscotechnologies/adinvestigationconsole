@@ -53,6 +53,7 @@ The status badge reports whether the console is ready, found a result, needs rev
 - It uses `Get-ADUser`, `Get-ADComputer`, and `Get-ADGroup` and does not create, modify, delete, or move Active Directory objects.
 - Results depend on the objects visible to the current Windows and Active Directory security context.
 - Lookups require exact identities; the console does not provide fuzzy search, directory enumeration, recursive group-membership analysis, or change auditing.
+- OU display decodes escaped delimiters, backslashes, and hexadecimal UTF-8 sequences in Distinguished Names. This affects formatting, not the directory queries.
 - `Possible Department` is inferred from the computer's OU hierarchy and is not an authoritative Active Directory department attribute.
 - Directory results and copied clipboard contents may be sensitive and should be handled according to your organization's access and retention requirements.
 
