@@ -1,4 +1,6 @@
-<h1 align="center">Active Directory Investigation Console</h1>
+<p align="center">
+  <img src="assets/ad-investigation-console-logo.png" alt="Active Directory Investigation Console" width="420">
+</p>
 
 <p align="center">
   Fast, read-only Active Directory lookups for authorized investigations.
