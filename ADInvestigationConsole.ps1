@@ -141,7 +141,7 @@ $DeviceButton.Add_Click({
         $text = "Computer Name       : $($computer.Name)`r`nPossible Department : $($ou[0])`r`nOU Path             : $($ou[1])`r`nDistinguished Name  : $($computer.DistinguishedName)"
         Set-Result Success 'Computer found' $text
     }
-    catch { Set-Result Error 'Computer lookup failed' 'The computer was not found.' }
+    catch { Set-Result Error 'Computer lookup failed' 'Active Directory could not complete the lookup; the computer may not exist or the query may have failed.' }
 })
 
 $GroupButton.Add_Click({
@@ -152,7 +152,7 @@ $GroupButton.Add_Click({
         $group = Get-ADGroup -Identity $name -Properties DistinguishedName -ErrorAction Stop
         Set-Result Success 'AD Group found' $group.DistinguishedName
     }
-    catch { Set-Result Error 'AD Group lookup failed' 'The AD group was not found.' }
+    catch { Set-Result Error 'AD Group lookup failed' 'Active Directory could not complete the lookup; the group may not exist or the query may have failed.' }
 })
 
 $CopyButton.Add_Click({ [Windows.Clipboard]::SetText($ResultText.Text) })
@@ -164,3 +164,4 @@ $ClearButton.Add_Click({
 
 $window.Add_ContentRendered({ $UserInput.Focus() | Out-Null })
 [void]$window.ShowDialog()
+
