@@ -16,12 +16,12 @@ The console uses the current Windows and Active Directory security context and p
 
 ## Install
 
-You need a domain-connected Windows host with PowerShell, the RSAT Active Directory module, network access to Active Directory, and permission to read the requested objects.
+You need a domain-connected Windows host with Windows PowerShell 5.1, the RSAT Active Directory module, network access to Active Directory, and permission to read the requested objects.
 
 ```powershell
 git clone https://github.com/delriscotechnologies/adinvestigationconsole.git
 cd adinvestigationconsole
-powershell.exe -File .\ADInvestigationConsole.ps1
+.\ADInvestigationConsole.ps1
 ```
 
 If your organization restricts PowerShell execution, follow its approved execution policy and code-signing requirements.
