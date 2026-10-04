@@ -164,4 +164,3 @@ $ClearButton.Add_Click({
 
 $window.Add_ContentRendered({ $UserInput.Focus() | Out-Null })
 [void]$window.ShowDialog()
-
